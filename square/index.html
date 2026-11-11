@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Square</title>
+<meta name="theme-color" content="#f3f0ea">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Square">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-512.png">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f3f0ea;--ink:#141414;--mute:#8a857d;--line:#e0dbd2;--card:#fbfaf7;--or:#ff6a00}
+@media (prefers-color-scheme:dark){:root{--bg:#0e0e0d;--ink:#f1eee8;--mute:#7d7a74;--line:#262523;--card:#161615}}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--bg);color:var(--ink);font:15px/1.4 Inter,system-ui,sans-serif}
+body{padding:calc(env(safe-area-inset-top) + 18px) 20px calc(env(safe-area-inset-bottom) + 110px);max-width:520px;margin:0 auto;min-height:100vh}
+.lbl{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);font-weight:500}
+.serif{font-family:"Instrument Serif",Georgia,serif;font-weight:400}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+header{display:flex;align-items:center;justify-content:space-between}
+header button{width:36px;height:36px;font-size:20px;color:var(--mute)}
+header button:disabled{opacity:.2}
+.brand{display:flex;align-items:center;gap:8px}
+.sq{width:10px;height:10px;background:var(--or);display:inline-block}
+.hero{text-align:center;padding:34px 0 26px}
+.hero .big{font-size:96px;line-height:.9;letter-spacing:-.01em}
+.hero .of{margin-top:10px;color:var(--mute)}
+.macros{display:flex;justify-content:center;gap:22px;margin-top:18px}
+.macros div{text-align:center}
+.macros b{display:block;font-weight:500;font-size:17px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.trends{margin-top:26px}
+.th{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.th .seg{margin:0}
+.chart{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px 14px 8px;margin-bottom:10px;touch-action:pan-y}
+.ch{display:flex;justify-content:space-between;align-items:baseline;min-height:20px}
+.rd{font-size:13px;color:var(--ink);font-weight:500}
+.rd i{font-style:normal;color:var(--mute);font-weight:400;margin-right:6px}
+.cv{height:120px;margin-top:6px;position:relative}
+.cv svg{display:block;width:100%;height:100%;overflow:visible}
+.cv text{font:10px Inter,sans-serif;fill:var(--mute)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px 15px;text-align:left;min-height:96px;display:flex;flex-direction:column;width:100%}
+.card .v{font-size:38px;line-height:1;margin-top:10px}
+.card .v small{font-family:Inter;font-size:13px;color:var(--mute);margin-left:3px}
+.card .s{font-size:12px;color:var(--mute);margin-top:auto;padding-top:8px}
+.card svg{margin-top:6px}
+.log{margin-top:26px}
+.log h3{margin-bottom:8px}
+.row{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line);width:100%;text-align:left}
+.row img,.row .ph{width:46px;height:46px;border-radius:12px;object-fit:cover;background:var(--line);flex:none}
+.row .n{flex:1;min-width:0}
+.row .n div:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+.row .n div:last-child{font-size:12px;color:var(--mute)}
+.row .k{font-size:22px}
+.empty{color:var(--mute);padding:18px 0;border-top:1px solid var(--line);font-size:14px}
+.bar{position:fixed;left:0;right:0;bottom:0;padding:12px 20px calc(env(safe-area-inset-bottom) + 14px);background:linear-gradient(transparent,var(--bg) 30%);display:flex;gap:10px;max-width:520px;margin:0 auto}
+.btn{flex:1;height:56px;border-radius:28px;display:flex;align-items:center;justify-content:center;gap:9px;font-weight:600;font-size:16px;border:1px solid var(--ink);position:relative;overflow:hidden;cursor:pointer}
+.btn.primary{background:var(--ink);color:var(--bg)}
+.btn input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.btn.off{opacity:.35;pointer-events:none}
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .2s}
+.sheet-bg.on{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;background:var(--bg);border-radius:24px 24px 0 0;padding:22px 20px calc(env(safe-area-inset-bottom) + 20px);transform:translateY(105%);transition:transform .28s cubic-bezier(.2,.8,.2,1);max-height:88vh;overflow:auto}
+.sheet.on{transform:none}
+.sheet h2{font-size:34px;line-height:1.05;margin-bottom:4px}
+.thumbs{display:flex;gap:8px;margin:14px 0;overflow-x:auto}
+.thumbs img{width:84px;height:84px;border-radius:14px;object-fit:cover}
+textarea,input.num{width:100%;font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;outline:none;resize:none}
+textarea:focus,input.num:focus{border-color:var(--ink)}
+input.num{font-family:"Instrument Serif",serif;font-size:56px;text-align:center;padding:8px}
+.act{display:flex;gap:10px;margin-top:14px}
+.act .btn{height:50px;font-size:15px}
+.items{margin:14px 0}
+.items div{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px;gap:10px}
+.items span:last-child{color:var(--mute);white-space:nowrap}
+.note{font-size:12px;color:var(--mute);margin-top:8px}
+.seg{display:flex;justify-content:center;gap:4px;margin-top:10px}
+.seg button{padding:6px 14px;border-radius:14px;font-size:13px;color:var(--mute)}
+.seg button.on{background:var(--ink);color:var(--bg)}
+.link{color:var(--mute);font-size:13px;text-decoration:underline;margin-top:14px;display:block;width:100%;text-align:center}
+.spin{display:inline-block;width:9px;height:9px;background:var(--or);animation:sp 1s infinite ease-in-out}
+@keyframes sp{50%{transform:rotate(90deg) scale(.6)}}
+.toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 14px);transform:translate(-50%,-80px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:20px;font-size:13px;transition:transform .25s;z-index:9;max-width:90vw;text-align:center}
+.toast.on{transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+<header>
+  <button id="prev" aria-label="Previous day">‹</button>
+  <div class="brand"><span class="sq"></span><span class="lbl" id="date">Today</span></div>
+  <button id="next" aria-label="Next day">›</button>
+</header>
+
+<section class="hero">
+  <div class="big serif" id="kcal">0</div>
+  <div class="of" id="of">calories</div>
+  <div class="macros">
+    <div><b id="mp">0g</b><span class="lbl">Protein</span></div>
+    <div><b id="mc">0g</b><span class="lbl">Carbs</span></div>
+    <div><b id="mf">0g</b><span class="lbl">Fat</span></div>
+  </div>
+</section>
+
+<section class="grid">
+  <button class="card" id="wcard">
+    <span class="lbl">Weight</span>
+    <div class="v serif" id="wv">—</div>
+  </button>
+  <div class="card">
+    <span class="lbl">TDEE</span>
+    <div class="v serif" id="tv">—</div>
+  </div>
+</section>
+
+<section class="trends">
+  <div class="th"><h3 class="lbl">Trends</h3>
+    <div class="seg" id="range"><button data-r="14">2W</button><button data-r="30">1M</button><button data-r="90">3M</button><button data-r="365">1Y</button></div>
+  </div>
+  <div class="chart" id="cw"><div class="ch"><span class="lbl">Weight</span><span class="rd" id="rw"></span></div><div class="cv"></div></div>
+  <div class="chart" id="cc"><div class="ch"><span class="lbl">Calories</span><span class="rd" id="rc"></span></div><div class="cv"></div></div>
+</section>
+
+<section class="log">
+  <h3 class="lbl">Food</h3>
+  <div id="list"></div>
+</section>
+<button class="link" id="dataBtn" style="margin-top:28px">Backup &amp; settings</button>
+
+<div class="bar">
+  <label class="btn" id="bScale">Scale<input type="file" accept="image/*" id="iScale"></label>
+  <label class="btn primary" id="bFood"><span class="sq"></span>Food<input type="file" accept="image/*" multiple id="iFood"></label>
+</div>
+
+<div class="sheet-bg" id="bg"></div>
+<div class="sheet" id="sheet"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const KCAL_PER_KG = 7700, LB = 2.20462;
+const S = { col:null, days:{}, weights:{}, settings:{unit:null,calib:[]}, view:null, sample:null, canImg:false, maxImgs:4 };
+const z = n => String(n).padStart(2,'0');
+const dkey = d => d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate());
+const today = () => dkey(new Date());
+const pk = k => { const [a,b,c]=k.split('-').map(Number); return new Date(a,b-1,c); };
+const addD = (k,n) => { const d=pk(k); d.setDate(d.getDate()+n); return dkey(d); };
+const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = n => Math.round(n).toLocaleString();
+const num = x => Math.max(0, Math.round(+x || 0));
+S.view = today();
+
+/* ---------- storage ---------- */
+// Standalone storage (GitHub Pages etc.): IndexedDB, falling back to localStorage.
+const LS='square.v1';
+function idb(){ return new Promise((res,rej)=>{ const r=indexedDB.open('square',1); r.onupgradeneeded=()=>r.result.createObjectStore('kv'); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+async function idbGet(k){ const d=await idb(); return new Promise((res,rej)=>{ const q=d.transaction('kv').objectStore('kv').get(k); q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error); }); }
+async function idbPut(k,v){ const d=await idb(); return new Promise((res,rej)=>{ const t=d.transaction('kv','readwrite'); t.objectStore('kv').put(v,k); t.oncomplete=res; t.onerror=()=>rej(t.error); }); }
+async function loadLocal(){
+  let v=null;
+  try{ v=await idbGet(LS); }catch{}
+  if(!v){ try{ v=JSON.parse(localStorage.getItem(LS)||'null'); }catch{} }
+  v=v||{};
+  Object.assign(S,{days:v.days||{},weights:v.weights||{},settings:{unit:null,calib:[],...(v.settings||{})}}); render();
+  try{ navigator.storage?.persist?.(); }catch{}
+}
+let slT;
+function saveLocal(){ clearTimeout(slT); slT=setTimeout(async()=>{
+  const v={days:S.days,weights:S.weights,settings:S.settings};
+  try{ await idbPut(LS, JSON.parse(JSON.stringify(v))); }catch{ try{ localStorage.setItem(LS, JSON.stringify(v)); }catch{ toast('Storage full — save a backup'); } }
+},200); }
+
+// AI: Claude's built-in sampling inside claude.ai, or your own Anthropic API key anywhere else.
+const getKey=()=>{ try{ return localStorage.getItem('square.key')||''; }catch{ return ''; } };
+const getModel=()=>{ try{ return localStorage.getItem('square.model')||'claude-sonnet-5-5'; }catch{ return 'claude-sonnet-5-5'; } };
+const aiReady=()=>!!S.sample || (S.standalone && !!getKey());
+const b64=b=>new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(String(r.result).split(',')[1]); r.onerror=rej; r.readAsDataURL(b); });
+function parseJSON(t){
+  try{ return JSON.parse(t); }catch{}
+  const m=t.match(/```(?:json)?\s*([\s\S]*?)```/); if(m){ try{ return JSON.parse(m[1]); }catch{} }
+  const a=t.search(/[{[]/), b=Math.max(t.lastIndexOf('}'),t.lastIndexOf(']'));
+  if(a>=0&&b>a){ try{ return JSON.parse(t.slice(a,b+1)); }catch{} }
+  throw {code:'invalid_json'};
+}
+async function aiJSON(prompt, blobs=[]){
+  if(S.sample) return S.sample.json(prompt, blobs.length ? {images:blobs, cache:false} : {cache:false});
+  const key=getKey(); if(!key) throw {code:'no_key'};
+  const content=[];
+  for(const b of blobs) content.push({type:'image', source:{type:'base64', media_type:(/^image\/(jpeg|png|webp|gif)$/.test(b.type)?b.type:'image/jpeg'), data:await b64(b)}});
+  content.push({type:'text', text:prompt});
+  let r;
+  try{ r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:getModel(), max_tokens:2000, messages:[{role:'user',content}]})}); }
+  catch{ throw {code:'upstream_error'}; }
+  if(!r.ok) throw {code: r.status===401||r.status===403?'bad_key' : r.status===429?'rate_limited' : r.status===400?'image_rejected':'upstream_error'};
+  const j=await r.json();
+  return parseJSON((j.content||[]).filter(c=>c.type==='text').map(c=>c.text).join(''));
+}
+function keySheet(after){
+  openSheet(`<span class="lbl">Setup</span><h2 class="serif">Anthropic API key</h2>
+    <p class="note" style="font-size:14px">Square reads your photos with Claude. Paste a key from console.anthropic.com — it's stored only on this device and sent only to Anthropic.</p>
+    <input id="kk" type="password" autocomplete="off" placeholder="sk-ant-…" value="${esc(getKey())}" style="width:100%;font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-top:12px">
+    <input id="km" autocomplete="off" value="${esc(getModel())}" style="width:100%;font:13px Inter;color:var(--mute);background:transparent;border:1px solid var(--line);border-radius:14px;padding:10px 14px;margin-top:8px">
+    <div class="act"><button class="btn primary" id="kgo">Save</button></div>`);
+  $('#kgo').onclick=()=>{ try{ localStorage.setItem('square.key',$('#kk').value.trim()); localStorage.setItem('square.model',$('#km').value.trim()||'claude-sonnet-5-5'); }catch{}
+    closeSheet(); if(getKey()) after?.(); };
+}
+const chains={};
+function save(id, data){
+  if(!S.col){ saveLocal(); return; }
+  chains[id]=(chains[id]||Promise.resolve()).then(()=> data ? S.col.doc(id).set(data) : S.col.doc(id).delete())
+    .catch(e=>toast(e && e.code==='quota_exceeded' ? 'Storage is full' : "Couldn't save — try again"));
+}
+function subscribe(){
+  const t=setTimeout(()=>toast("Can't reach your saved data yet"),10000);
+  S.col.onSnapshot(snap=>{
+    if(!snap.metadata.fromCache) clearTimeout(t);
+    const days={}, weights={}; let settings={unit:null,calib:[]};
+    for(const d of snap.docs){ const v=d.data(); if(!v) continue;
+      if(d.id==='settings') settings={...settings,...v};
+      else if(d.id.startsWith('d_')) days[d.id.slice(2)]=v;
+      else if(d.id.startsWith('w_')) weights[d.id.slice(2)]=v; }
+    Object.assign(S,{days,weights,settings}); render();
+  }, ()=>{ clearTimeout(t); toast('Sync paused — reopen the app'); });
+}
+const setSettings = patch => { S.settings={...S.settings,...patch}; save('settings', JSON.parse(JSON.stringify(S.settings))); };
+const setDay = (k, items) => { S.days={...S.days,[k]:{date:k,items}}; save('d_'+k, items.length?{date:k,items}:null); if(!items.length){ const d={...S.days}; delete d[k]; S.days=d; } render(); };
+const setWeight = (k, kg, unit) => { S.weights={...S.weights,[k]:{date:k,kg,unit}}; save('w_'+k,{date:k,kg,unit}); render(); };
+
+/* ---------- math ---------- */
+const sum = items => items.reduce((a,i)=>({kcal:a.kcal+i.kcal,p:a.p+i.p,c:a.c+i.c,f:a.f+i.f}),{kcal:0,p:0,c:0,f:0});
+const unit = () => S.settings.unit || 'lb';
+const showW = kg => unit()==='lb' ? kg*LB : kg;
+
+function tdee(){
+  const t=today(), start=addD(t,-28);
+  const intake=Object.entries(S.days).filter(([k,d])=>k<t && k>=start && d.items?.length).map(([,d])=>sum(d.items).kcal);
+  const pts=Object.entries(S.weights).filter(([k])=>k>=start && k<=t).map(([k,w])=>[(pk(k)-pk(start))/864e5, w.kg]).sort((a,b)=>a[0]-b[0]);
+  const base={days:intake.length, weighs:pts.length};
+  if(intake.length<2 || pts.length<2 || pts.at(-1)[0]-pts[0][0]<3) return {...base,need:true};
+  const n=pts.length, mx=pts.reduce((a,p)=>a+p[0],0)/n, my=pts.reduce((a,p)=>a+p[1],0)/n;
+  let sxx=0,sxy=0; for(const [x,y] of pts){ sxx+=(x-mx)**2; sxy+=(x-mx)*(y-my); }
+  const slope=sxy/sxx;
+  let s2=0.36; if(n>2){ s2=pts.reduce((a,[x,y])=>a+(y-(my+slope*(x-mx)))**2,0)/(n-2); s2=Math.max(s2,0.04); }
+  const seS=Math.sqrt(s2/sxx);
+  const avg=intake.reduce((a,b)=>a+b,0)/intake.length;
+  const sdI=Math.sqrt(intake.reduce((a,b)=>a+(b-avg)**2,0)/Math.max(1,intake.length-1));
+  const est=avg - slope*KCAL_PER_KG;
+  const err=Math.sqrt((seS*KCAL_PER_KG)**2 + (sdI/Math.sqrt(intake.length))**2);
+  return {...base, est, err, avg, wk:slope*7};
+}
+
+/* ---------- render ---------- */
+function render(){
+  const k=S.view, t=today();
+  const d=pk(k);
+  $('#date').textContent = k===t ? 'Today' : k===addD(t,-1) ? 'Yesterday' : d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
+  $('#next').disabled = k>=t;
+  const items=S.days[k]?.items||[], tot=sum(items), T=tdee();
+  $('#kcal').textContent=fmt(tot.kcal);
+  $('#of').textContent = T.need ? 'calories' : `of ${fmt(T.est)} · ${tot.kcal<=T.est ? fmt(T.est-tot.kcal)+' left' : fmt(tot.kcal-T.est)+' over'}`;
+  $('#mp').textContent=fmt(tot.p)+'g'; $('#mc').textContent=fmt(tot.c)+'g'; $('#mf').textContent=fmt(tot.f)+'g';
+
+  // weight
+  const wk=Object.keys(S.weights).filter(x=>x<=k).sort(); const last=wk.at(-1);
+  $('#wv').innerHTML = last ? `${showW(S.weights[last].kg).toFixed(1)}<small>${unit()}</small>` : '—';
+  $('#tv').innerHTML = T.need ? '—' : `${fmt(T.est)}<small>kcal</small>`;
+  renderTrends(T);
+
+  // list
+  $('#list').innerHTML = items.length ? items.slice().sort((a,b)=>a.ts-b.ts).map(i=>`
+    <button class="row" data-id="${esc(i.id)}">
+      ${i.thumb?`<img src="${esc(i.thumb)}" alt="">`:'<div class="ph"></div>'}
+      <div class="n"><div>${esc(i.name)}</div><div>${new Date(i.ts).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})} · P${fmt(i.p)} C${fmt(i.c)} F${fmt(i.f)}${i.sq===false?' · no square':''}</div></div>
+      <div class="k serif">${fmt(i.kcal)}</div>
+    </button>`).join('') : `<div class="empty">Nothing logged${k===t?' yet. Snap your food with the orange square in frame.':'.'}</div>`;
+}
+
+/* ---------- trends ---------- */
+let RANGE=30; try{ RANGE=+localStorage.getItem('square.range')||30; }catch{}
+const shortD = k => pk(k).toLocaleDateString(undefined,{month:'short',day:'numeric'});
+const CH = {};
+function renderTrends(T){
+  document.querySelectorAll('#range button').forEach(b=>b.classList.toggle('on',+b.dataset.r===RANGE));
+  const t=today(), keys=[]; for(let i=RANGE-1;i>=0;i--) keys.push(addD(t,-i));
+  const u=unit(), dp=u==='lb'?1:1;
+  // weight: raw + smoothed (EWMA over all history so the start of the window isn't cold)
+  const allW=Object.keys(S.weights).sort(); let ew=null; const sm={};
+  for(const k of allW){ const v=showW(S.weights[k].kg); ew = ew==null ? v : ew + 0.25*(v-ew); sm[k]=ew; }
+  const wv=keys.map(k=>S.weights[k]?showW(S.weights[k].kg):null), sv=keys.map(k=>sm[k]??null);
+  const cv=keys.map(k=>S.days[k]?.items?.length ? sum(S.days[k].items).kcal : null);
+  CH.w={keys, vals:wv, fmt:v=>v.toFixed(dp)+' '+u, def:()=>{ const p=wv.map((v,i)=>v!=null?i:-1).filter(i=>i>=0); if(!p.length) return ''; const a=sv[p[0]], b=sv[p.at(-1)], d=b-a; return p.length>1?`<i>${RANGE===365?'1Y':RANGE+'d'}</i>${d>=0?'+':'−'}${Math.abs(d).toFixed(1)} ${u}`:`${wv[p[0]].toFixed(dp)} ${u}`; }};
+  CH.c={keys, vals:cv, fmt:v=>fmt(v)+' kcal', def:()=>{ const v=cv.filter((x,i)=>x!=null && keys[i]<t); return v.length?`<i>avg</i>${fmt(v.reduce((a,b)=>a+b,0)/v.length)} kcal`:''; }};
+  drawW($('#cw .cv'), wv, sv); drawC($('#cc .cv'), cv, T.need?null:T.est);
+  $('#rw').innerHTML=CH.w.def(); $('#rc').innerHTML=CH.c.def();
+}
+const PADR=34;
+function xs(i,n,W){ return n<=1 ? (W-PADR)/2 : 4 + i/(n-1)*(W-PADR-8); }
+function drawW(el, raw, sm){
+  const W=el.clientWidth||320, H=120, n=raw.length, have=raw.filter(v=>v!=null);
+  if(!have.length){ el.innerHTML=`<svg><text x="${(W-PADR)/2}" y="64" text-anchor="middle">No weigh-ins in this range</text></svg>`; return; }
+  let mn=Math.min(...have,...sm.filter(v=>v!=null)), mx=Math.max(...have,...sm.filter(v=>v!=null));
+  if(mx-mn<2){ const m=(mx+mn)/2; mn=m-1; mx=m+1; }
+  const y=v=>8+(1-(v-mn)/(mx-mn))*(H-20);
+  const r=n>120?1.6:n>40?2.2:3;
+  let line='', seg=[];
+  sm.forEach((v,i)=>{ if(v!=null) seg.push(xs(i,n,W).toFixed(1)+','+y(v).toFixed(1)); });
+  if(seg.length>1) line=`<polyline fill="none" stroke="var(--or)" stroke-width="2" stroke-linejoin="round" points="${seg.join(' ')}"/>`;
+  el.innerHTML=`<svg>
+    <line x1="0" x2="${W-PADR+4}" y1="${y(mx)}" y2="${y(mx)}" stroke="var(--line)"/><line x1="0" x2="${W-PADR+4}" y1="${y(mn)}" y2="${y(mn)}" stroke="var(--line)"/>
+    <text x="${W}" y="${y(mx)+3}" text-anchor="end">${mx.toFixed(1)}</text><text x="${W}" y="${y(mn)+3}" text-anchor="end">${mn.toFixed(1)}</text>
+    ${raw.map((v,i)=>v==null?'':`<circle cx="${xs(i,n,W).toFixed(1)}" cy="${y(v).toFixed(1)}" r="${r}" fill="var(--mute)" opacity=".55"/>`).join('')}
+    ${line}<g class="guide"></g></svg>`;
+  el._y=y; el._n=n; el._W=W;
+}
+function drawC(el, vals, target){
+  const W=el.clientWidth||320, H=120, n=vals.length, have=vals.filter(v=>v!=null), t=today();
+  if(!have.length){ el.innerHTML=`<svg><text x="${(W-PADR)/2}" y="64" text-anchor="middle">No food logged in this range</text></svg>`; return; }
+  const mx=Math.max(...have, target||0)*1.1, y=v=>H-12-(v/mx)*(H-20);
+  const bw=Math.max(1, Math.min(14, (W-PADR-8)/n*0.7)), keys=CH.c.keys;
+  el.innerHTML=`<svg>
+    <line x1="0" x2="${W-PADR+4}" y1="${H-12}" y2="${H-12}" stroke="var(--line)"/>
+    ${vals.map((v,i)=>v==null?'':`<rect x="${(xs(i,n,W)-bw/2).toFixed(1)}" y="${y(v).toFixed(1)}" width="${bw.toFixed(1)}" height="${(H-12-y(v)).toFixed(1)}" rx="${Math.min(3,bw/2)}" fill="${keys[i]===t?'var(--or)':'var(--ink)'}" opacity="${keys[i]===t?1:.75}"/>`).join('')}
+    ${target?`<line x1="0" x2="${W-PADR+4}" y1="${y(target)}" y2="${y(target)}" stroke="var(--or)" stroke-dasharray="3 3"/><text x="${W}" y="${y(target)+3}" text-anchor="end">${fmt(target)}</text>`:`<text x="${W}" y="${y(mx/1.1)+3}" text-anchor="end">${fmt(mx/1.1)}</text>`}
+    <g class="guide"></g></svg>`;
+  el._n=n; el._W=W;
+}
+function scrub(id, chKey){
+  const box=$(id), el=box.querySelector('.cv'), rd=box.querySelector('.rd');
+  const at=e=>{ const c=CH[chKey]; if(!c||!el._n) return; const b=el.getBoundingClientRect(), W=el._W, n=el._n;
+    let i=Math.round(((e.clientX-b.left)-4)/(W-PADR-8)*(n-1)); i=Math.max(0,Math.min(n-1,i));
+    // snap to nearest day that has data
+    let best=-1; for(let d=0; d<n; d++){ for(const j of [i-d,i+d]) if(j>=0&&j<n&&c.vals[j]!=null){ best=j; break; } if(best>=0) break; }
+    if(best<0) return;
+    const x=xs(best,n,W), g=el.querySelector('.guide'); if(g) g.innerHTML=`<line x1="${x}" x2="${x}" y1="0" y2="108" stroke="var(--ink)" opacity=".35"/>`;
+    rd.innerHTML=`<i>${shortD(c.keys[best])}</i>${c.fmt(c.vals[best])}`; };
+  const end=()=>{ const g=el.querySelector('.guide'); if(g) g.innerHTML=''; rd.innerHTML=CH[chKey]?.def()||''; };
+  box.addEventListener('pointerdown',e=>{ at(e); box.setPointerCapture?.(e.pointerId); });
+  box.addEventListener('pointermove',e=>{ if(e.buttons||e.pointerType==='mouse') at(e); });
+  box.addEventListener('pointerup',end); box.addEventListener('pointercancel',end); box.addEventListener('pointerleave',end);
+}
+scrub('#cw','w'); scrub('#cc','c');
+$('#range').onclick=e=>{ const b=e.target.closest('button'); if(!b) return; RANGE=+b.dataset.r; try{localStorage.setItem('square.range',RANGE)}catch{} render(); };
+let rz; addEventListener('resize',()=>{ clearTimeout(rz); rz=setTimeout(render,150); });
+
+/* ---------- ui helpers ---------- */
+let tt; function toast(m){ const e=$('#toast'); e.textContent=m; e.classList.add('on'); clearTimeout(tt); tt=setTimeout(()=>e.classList.remove('on'),2600); }
+function openSheet(html){ $('#sheet').innerHTML=html; $('#sheet').classList.add('on'); $('#bg').classList.add('on'); }
+function closeSheet(){ $('#sheet').classList.remove('on'); $('#bg').classList.remove('on'); }
+$('#bg').onclick=closeSheet;
+$('#prev').onclick=()=>{ S.view=addD(S.view,-1); render(); };
+$('#next').onclick=()=>{ if(S.view<today()){ S.view=addD(S.view,1); render(); } };
+const errMsg = e => ({rate_limited:'Too many requests — try again in a bit', not_granted:'Allow Claude to read photos to use this', image_rejected:"That photo couldn't be read", refused:"Couldn't estimate that one", invalid_json:'Got a garbled answer — try again', no_key:'Add your API key first', bad_key:'API key was rejected — check it in Backup & settings'}[e?.code] || 'Something went wrong — try again');
+
+async function prep(file){
+  try{
+    const b=await createImageBitmap(file,{imageOrientation:'from-image'});
+    const c=document.createElement('canvas'), x=c.getContext('2d');
+    const s=Math.min(1,1600/Math.max(b.width,b.height)); c.width=Math.round(b.width*s); c.height=Math.round(b.height*s);
+    x.drawImage(b,0,0,c.width,c.height);
+    const send=await new Promise(r=>c.toBlob(r,'image/jpeg',.88));
+    const t=document.createElement('canvas'); t.width=t.height=140; const side=Math.min(b.width,b.height);
+    t.getContext('2d').drawImage(b,(b.width-side)/2,(b.height-side)/2,side,side,0,0,140,140);
+    return {send:send||file, thumb:t.toDataURL('image/jpeg',.6)};
+  }catch{ return {send:file, thumb:null}; }
+}
+
+/* ---------- AI ---------- */
+const JSON_FMT = `Reply with only JSON: {"name":"short meal name (2-5 words)","items":[{"food":"item","grams":0,"kcal":0,"p":0,"c":0,"f":0}],"square_seen":true,"confidence":"low|medium|high"} where p/c/f are grams of protein/carbs/fat.`;
+function calibText(){
+  const c=(S.settings.calib||[]).slice(-15);
+  return c.length ? `\n\nThis user's past corrections to your estimates — learn their usual portions, ingredients and habits from them:\n${c.map(x=>`- You estimated ${x.before}. They said: "${x.note}". Corrected to ${x.after}.`).join('\n')}` : '';
+}
+const brief = e => `${e.name}, ${fmt(e.kcal)} kcal (${(e.items||[]).map(i=>`${i.food} ${num(i.grams)}g`).join(', ')})`;
+function toEntry(r, extra){
+  const items=(Array.isArray(r?.items)?r.items:[]).map(i=>({food:String(i.food||'item').slice(0,60),grams:num(i.grams),kcal:num(i.kcal),p:num(i.p),c:num(i.c),f:num(i.f)}));
+  if(!items.length) throw {code:'invalid_json'};
+  return {...extra, name:String(r.name||items[0].food).slice(0,50), items, ...sum(items), conf:r.confidence||null, sq:r.square_seen!==false};
+}
+
+function foodSheet(preps){
+  openSheet(`<span class="lbl">New entry</span><h2 class="serif">What's this?</h2>
+    <div class="thumbs">${preps.map(p=>p.thumb?`<img src="${p.thumb}">`:'').join('')}</div>
+    <textarea id="fnote" rows="2" placeholder="Details, optional — cooked in butter, ate half, 2 slices…"></textarea>
+    <div class="act"><button class="btn primary" id="fgo">Estimate</button></div>`);
+  $('#fgo').onclick=async()=>{
+    const note=$('#fnote').value.trim(), k=S.view;
+    $('#fgo').innerHTML='<span class="spin"></span>Estimating'; $('#fgo').disabled=true;
+    try{
+      const r=await aiJSON(`Estimate the calories and macros of the food in ${preps.length>1?'these photos (one meal, possibly several angles or dishes)':'this photo'}.
+A flat ORANGE SQUARE exactly 2 x 2 inches (5.08 cm per side) is placed in frame as a size reference. Find it and use it, correcting for perspective, to judge portion sizes, plate diameter, depth and volume; then convert to grams with typical densities. Include likely hidden calories (cooking oil, butter, dressings, sauces) appropriate to how the food looks prepared. Only count what is visible plus clearly implied ingredients; ignore the square itself.${note?`\nThe user adds: "${note}" — this overrides what you see.`:''}${calibText()}
+${JSON_FMT}`, preps.map(p=>p.send));
+      const e=toEntry(r,{id:'e'+Date.now().toString(36), ts: k===today()?Date.now():pk(k).setHours(12), thumb:preps[0]?.thumb||null, note});
+      setDay(k,[...(S.days[k]?.items||[]).map(x=>({...x})), e]); closeSheet();
+    }catch(err){ $('#fgo').textContent='Try again'; $('#fgo').disabled=false; toast(errMsg(err)); }
+  };
+}
+
+function entrySheet(id){
+  const k=S.view, list=(S.days[k]?.items||[]).map(x=>JSON.parse(JSON.stringify(x))), e=list.find(x=>x.id===id); if(!e) return;
+  openSheet(`${e.thumb?`<div class="thumbs"><img src="${esc(e.thumb)}" style="width:110px;height:110px"></div>`:''}
+    <span class="lbl">${fmt(e.kcal)} kcal · P${fmt(e.p)} C${fmt(e.c)} F${fmt(e.f)}</span><h2 class="serif">${esc(e.name)}</h2>
+    <div class="items">${e.items.map(i=>`<div><span>${esc(i.food)} · ${fmt(i.grams)}g</span><span>${fmt(i.kcal)} kcal</span></div>`).join('')}</div>
+    ${e.sq===false?'<div class="note">No orange square was spotted, so portions are rougher.</div>':''}
+    <textarea id="fix" rows="2" placeholder="What's off? — it was 2 eggs, no oil, bigger bowl…" style="margin-top:12px"></textarea>
+    <div class="act"><button class="btn primary" id="fgo">Fix</button></div>
+    <button class="link" id="fdel">Delete</button>`);
+  $('#fdel').onclick=()=>{ setDay(k,list.filter(x=>x.id!==id)); closeSheet(); };
+  $('#fgo').onclick=async()=>{
+    const note=$('#fix').value.trim(); if(!note){ $('#fix').focus(); return; }
+    $('#fgo').innerHTML='<span class="spin"></span>Fixing'; $('#fgo').disabled=true;
+    try{
+      const r=await aiJSON(`Earlier you estimated this meal from a photo (a 2x2 inch orange square was in frame for scale):
+${JSON.stringify({name:e.name,items:e.items})}
+The user corrects you: "${note}"
+Apply the correction and return the full corrected estimate. Keep items the correction doesn't affect.${calibText()}
+${JSON_FMT}`);
+      const n=toEntry(r,{id:e.id,ts:e.ts,thumb:e.thumb,note:[e.note,note].filter(Boolean).join(' / ')});
+      n.sq=e.sq;
+      setDay(k,list.map(x=>x.id===id?n:x));
+      setSettings({calib:[...(S.settings.calib||[]), {before:brief(e), note:note.slice(0,200), after:brief(n)}].slice(-40)});
+      closeSheet(); toast('Fixed — future estimates will learn from this');
+    }catch(err){ $('#fgo').textContent='Try again'; $('#fgo').disabled=false; toast(errMsg(err)); }
+  };
+}
+
+function weightSheet(val, u, thumb){
+  let cur=u||unit();
+  const k=S.view;
+  openSheet(`<span class="lbl">${k===today()?'Today':pk(k).toLocaleDateString(undefined,{month:'short',day:'numeric'})}</span><h2 class="serif">Weight</h2>
+    ${thumb?`<div class="thumbs"><img src="${thumb}"></div>`:''}
+    <input class="num" id="wnum" inputmode="decimal" value="${val!=null?val:''}" placeholder="0.0">
+    <div class="seg"><button data-u="lb">lb</button><button data-u="kg">kg</button></div>
+    <div class="act"><button class="btn primary" id="wgo">Save</button></div>
+    ${S.weights[k]?'<button class="link" id="wdel">Remove</button>':''}`);
+  const seg=()=>document.querySelectorAll('.seg button').forEach(b=>b.classList.toggle('on',b.dataset.u===cur));
+  document.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{ cur=b.dataset.u; seg(); }); seg();
+  if(S.weights[k]) $('#wdel').onclick=()=>{ const w={...S.weights}; delete w[k]; S.weights=w; save('w_'+k,null); render(); closeSheet(); };
+  $('#wgo').onclick=()=>{
+    const v=parseFloat($('#wnum').value.replace(',','.')); if(!(v>20&&v<1000)){ $('#wnum').focus(); return; }
+    if(!S.settings.unit || S.settings.unit!==cur) setSettings({unit:cur});
+    setWeight(k, cur==='lb'? v/LB : v, cur); closeSheet();
+  };
+}
+
+$('#wcard').onclick=()=>{ const w=S.weights[S.view]; weightSheet(w?showW(w.kg).toFixed(1):null); };
+$('#list').onclick=e=>{ const r=e.target.closest('.row'); if(r) entrySheet(r.dataset.id); };
+
+$('#iFood').onchange=async e=>{
+  const files=[...e.target.files].slice(0,S.maxImgs); e.target.value=''; if(!files.length) return;
+  foodSheet(await Promise.all(files.map(prep)));
+};
+$('#iScale').onchange=async e=>{
+  const f=e.target.files[0]; e.target.value=''; if(!f) return;
+  const p=await prep(f);
+  openSheet(`<span class="lbl">Scale</span><h2 class="serif"><span class="spin"></span> Reading…</h2>${p.thumb?`<div class="thumbs"><img src="${p.thumb}"></div>`:''}`);
+  try{
+    const r=await aiJSON(`This is a photo of a bathroom scale display. Read the body weight shown. Reply with only JSON: {"weight":number or null,"unit":"lb" or "kg" or null}. Use null if the number isn't legible. If no unit is printed, guess from the value.`,[p.send]);
+    const w=+r?.weight;
+    weightSheet(w>0?w:null, r?.unit==='kg'||r?.unit==='lb'?r.unit:null, p.thumb);
+    if(!(w>0)) toast("Couldn't read it — type it in");
+  }catch(err){ weightSheet(null,null,p.thumb); toast(errMsg(err)); }
+};
+
+/* ---------- backup / restore ---------- */
+// Portable format, versioned so any future app can read it.
+function exportData(){
+  return { format:'square-backup', version:1, exportedAt:new Date().toISOString(),
+    note:'Weights are stored in kg. Days hold food entries with kcal and grams of protein (p), carbs (c), fat (f).',
+    settings:JSON.parse(JSON.stringify(S.settings)), weights:JSON.parse(JSON.stringify(S.weights)), days:JSON.parse(JSON.stringify(S.days)) };
+}
+function importData(d){
+  if(!d || typeof d!=='object' || !(d.days||d.weights)) throw new Error('bad');
+  let nd=0, nw=0;
+  for(const [k,v] of Object.entries(d.weights||{})){ if(!/^\d{4}-\d\d-\d\d$/.test(k) || !(+v?.kg>0)) continue;
+    S.weights={...S.weights,[k]:{date:k,kg:+v.kg,unit:v.unit||null}}; save('w_'+k,S.weights[k]); nw++; }
+  for(const [k,v] of Object.entries(d.days||{})){ if(!/^\d{4}-\d\d-\d\d$/.test(k) || !Array.isArray(v?.items)) continue;
+    const cur=(S.days[k]?.items||[]).map(x=>({...x})), ids=new Set(cur.map(x=>x.id));
+    const add=v.items.filter(i=>i && i.id && !ids.has(i.id)).map(i=>({...i, kcal:num(i.kcal),p:num(i.p),c:num(i.c),f:num(i.f)}));
+    if(!add.length) continue; const items=[...cur,...add]; S.days={...S.days,[k]:{date:k,items}}; save('d_'+k,{date:k,items}); nd++; }
+  const s=d.settings||{}, calib=[...(S.settings.calib||[])], seen=new Set(calib.map(c=>c.before+c.note));
+  for(const c of (Array.isArray(s.calib)?s.calib:[])) if(c && !seen.has(c.before+c.note)){ calib.push(c); seen.add(c.before+c.note); }
+  setSettings({unit:S.settings.unit||s.unit||null, calib:calib.slice(-40)});
+  render(); return {nd,nw};
+}
+$('#dataBtn').onclick=()=>{
+  const nDays=Object.keys(S.days).length, nW=Object.keys(S.weights).length;
+  openSheet(`<span class="lbl">${nDays} food days · ${nW} weigh-ins</span><h2 class="serif">Your data</h2>
+    <p class="note" style="font-size:14px">Save everything to a file. Any future version of this app can load it back in.</p>
+    <div class="act"><button class="btn primary" id="dx">Save backup file</button></div>
+    <div class="act"><label class="btn">Restore from file<input type="file" accept=".json,application/json,text/plain" id="di"></label></div>
+    <button class="link" id="dcopy">Copy as text instead</button>
+    ${S.standalone?'<button class="link" id="dkey">API key & model</button>':''}`);
+  if(S.standalone) $('#dkey').onclick=()=>keySheet();
+  const json=()=>JSON.stringify(exportData());
+  $('#dx').onclick=async()=>{
+    const dl=window.claude ? await claude.use('downloads').catch(()=>null) : null;
+    if(!dl){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([json()],{type:'application/json'})); a.download=`square-backup-${today()}.json`; document.body.append(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),4000); toast('Backup saved'); return; }
+    try{ await dl.save({filename:`square-backup-${today()}.json`, data:json()}); toast('Backup saved'); }
+    catch{ toast('Backup not saved'); }
+  };
+  $('#dcopy').onclick=async()=>{ try{ await navigator.clipboard.writeText(json()); toast('Copied — paste it somewhere safe'); }catch{ toast("Couldn't copy"); } };
+  $('#di').onchange=async e=>{ const f=e.target.files[0]; e.target.value=''; if(!f) return;
+    try{ const r=importData(JSON.parse(await f.text())); closeSheet(); toast(`Restored ${r.nd} days, ${r.nw} weigh-ins`); }
+    catch{ toast("That file isn't a Square backup"); } };
+};
+
+/* ---------- boot ---------- */
+render();
+(async()=>{
+  const C=window.claude;
+  if(!C){ S.standalone=true; await loadLocal(); return; }
+  const [db,user,sample]=await Promise.all(['db','user','sample'].map(n=>C.use(n).catch(()=>null)));
+  S.sample=sample;
+  if(sample){ const lim=await sample.limits().catch(()=>null); S.canImg=!!lim?.images; if(lim?.images?.maxCount) S.maxImgs=lim.images.maxCount; }
+  if(!S.canImg) aiOff();
+  let uid=null; try{ uid=user?await user.id():null; }catch{}
+  if(db && uid){ S.col=db.collection('data/users/'+uid); subscribe(); } else loadLocal();
+})();
+// Without a key, tapping Scale/Food opens setup instead of the camera.
+['#bScale','#bFood'].forEach(id=>$(id).addEventListener('click',e=>{ if(S.standalone && !getKey()){ e.preventDefault(); keySheet(()=>$(id+' input').click()); } }));
+function aiOff(){ $('#bFood').classList.add('off'); $('#bScale').classList.add('off'); }
+</script>
+</body>
+</html>
