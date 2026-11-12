@@ -6,8 +6,9 @@ A minimal calorie + TDEE tracker. Snap your scale, snap your food, and it works 
 - **Food** — photo(s) of a meal with a **2×2 inch orange square** in frame → calories, protein, carbs, fat.
 - **Fix** — tap any entry and say what's off. Corrections are saved and fed into future estimates, so it learns your portions.
 - **TDEE** — average intake minus weight change (7,700 kcal/kg, regression over the last 28 days), with a ± range that tightens as data builds.
-- **Trends** — weight (raw + smoothed) and daily calories, 2W / 1M / 3M / 1Y. Press and drag to read any day.
-- **Backup & settings** — export everything to a `.json` file, restore/merge from one.
+- **Goals** — tap the TDEE card: set weight gain/loss per week and protein per lb (default 0.9). Today shows how many more calories you need (TDEE + surplus) and protein eaten vs. target.
+- **Trends** — separate tab: weight (raw + smoothed) and daily calories, 2W / 1M / 3M / 1Y. Press and drag to read any day.
+- **GitHub backup** — every input (weights, meals, notes, corrections, goals, meal photos) is saved to a private repo. The dot at top right shows status; tap it for setup.
 
 ## Run it on GitHub Pages
 
@@ -16,21 +17,32 @@ A minimal calorie + TDEE tracker. Snap your scale, snap your food, and it works 
 3. Open `https://<you>.github.io/<repo>/` on your phone. In Safari: **Share → Add to Home Screen** for a full-screen app.
 4. The first time you tap Scale or Food, paste an Anthropic API key from [console.anthropic.com](https://console.anthropic.com). You can change the model there too (default `claude-sonnet-5-5`).
 
+## Save your data to GitHub
+
+The first time you tap Scale or Food, Setup asks for your Anthropic key and GitHub details (later: tap the dot at top right):
+
+1. **Repo** — a *private* repo just for data, e.g. `gvcgcbrcht-png/FOOD-data` (create it on GitHub first; it can be empty). Don't use the public Pages repo — your weight and meals would be public.
+2. **Token** — GitHub → Settings → Developer settings → **Fine-grained tokens** → Generate. Repository access: *Only select repositories* → your data repo. Permissions: **Contents → Read and write**. Paste the `github_pat_…` value.
+
+Every change is committed to that file a few seconds later. When the app opens (or you switch back to it) it pulls the latest, so it works across devices. If two devices edit at once, entries are merged. Files in the repo: `square-data.json` (all numbers, notes, corrections, goals) and `square-data-photos/YYYY-MM.json` (meal photo thumbnails by entry id).
+
+The file uses the backup format below, so any future version of the app can read it straight from the repo.
+
 ## Where data lives
 
-- **On GitHub Pages:** in your browser's storage (IndexedDB) on that device. Nothing is sent anywhere except photos/prompts to Anthropic's API. Use **Backup & settings → Save backup file** now and then. Clearing site data or switching phones loses anything not backed up.
+- **On GitHub Pages:** on the device (IndexedDB) and in your GitHub data repo. Photos are sent to Anthropic's API for estimates; small thumbnails are kept in the repo.
 - **Inside Claude (artifact):** saved to your Claude account.
 
-To move data between the two (or into a future version), export from one and **Restore from file** in the other. Restores merge in without duplicating entries.
+A future version of the app can load everything straight from `square-data.json` in the repo.
 
-## Backup format (`square-backup`, version 1)
+## Data format (`square-backup`, version 1)
 
 ```json
 {
   "format": "square-backup",
   "version": 1,
   "exportedAt": "2026-11-11T15:40:00.000Z",
-  "settings": { "unit": "lb", "calib": [{ "before": "...", "note": "...", "after": "..." }] },
+  "settings": { "unit": "lb", "goalKgWk": 0.23, "protPerLb": 0.9, "calib": [{ "before": "...", "note": "...", "after": "..." }] },
   "weights": { "2026-11-11": { "date": "2026-11-11", "kg": 81.6, "unit": "lb" } },
   "days": {
     "2026-11-11": {

@@ -33,15 +33,26 @@ header button:disabled{opacity:.2}
 .macros{display:flex;justify-content:center;gap:22px;margin-top:18px}
 .macros div{text-align:center}
 .macros b{display:block;font-weight:500;font-size:17px}
+.macros b small{font-size:12px;color:var(--mute);font-weight:400}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.trends{margin-top:26px}
+.tabs{display:flex;justify-content:center;gap:26px;margin-bottom:6px}
+.tabs button{font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:500;color:var(--mute);padding:6px 2px;border-bottom:1.5px solid transparent}
+.tabs button.on{color:var(--ink);border-color:var(--or)}
+.tabs{position:relative}
+#sync{position:absolute;right:0;top:0;width:32px;height:30px;border:0!important;padding:0}
+#sync::after{content:"";position:absolute;right:8px;top:11px;width:7px;height:7px;border-radius:50%;background:var(--mute);opacity:.5}
+#sync[data-s=pending]::after{background:var(--or);opacity:1;animation:bl 1s infinite}
+#sync[data-s=err]::after,#sync[data-s=off]::after{background:transparent;border:1.5px solid var(--or);opacity:1;width:5px;height:5px}
+@keyframes bl{50%{opacity:.25}}
+body.trends .bar{display:none}
+body.trends{padding-bottom:calc(env(safe-area-inset-bottom) + 30px)}
 .th{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .th .seg{margin:0}
 .chart{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px 14px 8px;margin-bottom:10px;touch-action:pan-y}
 .ch{display:flex;justify-content:space-between;align-items:baseline;min-height:20px}
 .rd{font-size:13px;color:var(--ink);font-weight:500}
 .rd i{font-style:normal;color:var(--mute);font-weight:400;margin-right:6px}
-.cv{height:120px;margin-top:6px;position:relative}
+.cv{height:200px;margin-top:6px;position:relative}
 .cv svg{display:block;width:100%;height:100%;overflow:visible}
 .cv text{font:10px Inter,sans-serif;fill:var(--mute)}
 .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px 15px;text-align:left;min-height:96px;display:flex;flex-direction:column;width:100%}
@@ -90,6 +101,8 @@ input.num{font-family:"Instrument Serif",serif;font-size:56px;text-align:center;
 </style>
 </head>
 <body>
+<nav class="tabs"><button data-v="today" class="on">Today</button><button data-v="trends">Trends</button><button id="sync" hidden aria-label="Backup status" data-s="off"></button></nav>
+<div id="vToday">
 <header>
   <button id="prev" aria-label="Previous day">‹</button>
   <div class="brand"><span class="sq"></span><span class="lbl" id="date">Today</span></div>
@@ -106,30 +119,29 @@ input.num{font-family:"Instrument Serif",serif;font-size:56px;text-align:center;
   </div>
 </section>
 
-<section class="grid">
+<section class="grid" style="margin-top:0">
   <button class="card" id="wcard">
     <span class="lbl">Weight</span>
     <div class="v serif" id="wv">—</div>
   </button>
-  <div class="card">
+  <button class="card" id="tcard">
     <span class="lbl">TDEE</span>
     <div class="v serif" id="tv">—</div>
-  </div>
-</section>
-
-<section class="trends">
-  <div class="th"><h3 class="lbl">Trends</h3>
-    <div class="seg" id="range"><button data-r="14">2W</button><button data-r="30">1M</button><button data-r="90">3M</button><button data-r="365">1Y</button></div>
-  </div>
-  <div class="chart" id="cw"><div class="ch"><span class="lbl">Weight</span><span class="rd" id="rw"></span></div><div class="cv"></div></div>
-  <div class="chart" id="cc"><div class="ch"><span class="lbl">Calories</span><span class="rd" id="rc"></span></div><div class="cv"></div></div>
+  </button>
 </section>
 
 <section class="log">
   <h3 class="lbl">Food</h3>
   <div id="list"></div>
 </section>
-<button class="link" id="dataBtn" style="margin-top:28px">Backup &amp; settings</button>
+</div>
+
+<div id="vTrends" hidden>
+  <div class="seg" id="range" style="margin:18px 0 16px"><button data-r="14">2W</button><button data-r="30">1M</button><button data-r="90">3M</button><button data-r="365">1Y</button></div>
+  <div class="chart" id="cw"><div class="ch"><span class="lbl">Weight</span><span class="rd" id="rw"></span></div><div class="cv"></div></div>
+  <div class="chart" id="cc"><div class="ch"><span class="lbl">Calories</span><span class="rd" id="rc"></span></div><div class="cv"></div></div>
+  <p class="note" style="text-align:center;margin-top:14px">Press and drag a chart to read any day.</p>
+</div>
 
 <div class="bar">
   <label class="btn" id="bScale">Scale<input type="file" accept="image/*" id="iScale"></label>
@@ -165,12 +177,12 @@ async function loadLocal(){
   try{ v=await idbGet(LS); }catch{}
   if(!v){ try{ v=JSON.parse(localStorage.getItem(LS)||'null'); }catch{} }
   v=v||{};
-  Object.assign(S,{days:v.days||{},weights:v.weights||{},settings:{unit:null,calib:[],...(v.settings||{})}}); render();
+  Object.assign(S,{days:v.days||{},weights:v.weights||{},settings:{unit:null,calib:[],...(v.settings||{})},updatedAt:v.updatedAt||0}); render();
   try{ navigator.storage?.persist?.(); }catch{}
 }
 let slT;
 function saveLocal(){ clearTimeout(slT); slT=setTimeout(async()=>{
-  const v={days:S.days,weights:S.weights,settings:S.settings};
+  const v={days:S.days,weights:S.weights,settings:S.settings,updatedAt:S.updatedAt||0};
   try{ await idbPut(LS, JSON.parse(JSON.stringify(v))); }catch{ try{ localStorage.setItem(LS, JSON.stringify(v)); }catch{ toast('Storage full — save a backup'); } }
 },200); }
 
@@ -200,18 +212,11 @@ async function aiJSON(prompt, blobs=[]){
   const j=await r.json();
   return parseJSON((j.content||[]).filter(c=>c.type==='text').map(c=>c.text).join(''));
 }
-function keySheet(after){
-  openSheet(`<span class="lbl">Setup</span><h2 class="serif">Anthropic API key</h2>
-    <p class="note" style="font-size:14px">Square reads your photos with Claude. Paste a key from console.anthropic.com — it's stored only on this device and sent only to Anthropic.</p>
-    <input id="kk" type="password" autocomplete="off" placeholder="sk-ant-…" value="${esc(getKey())}" style="width:100%;font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-top:12px">
-    <input id="km" autocomplete="off" value="${esc(getModel())}" style="width:100%;font:13px Inter;color:var(--mute);background:transparent;border:1px solid var(--line);border-radius:14px;padding:10px 14px;margin-top:8px">
-    <div class="act"><button class="btn primary" id="kgo">Save</button></div>`);
-  $('#kgo').onclick=()=>{ try{ localStorage.setItem('square.key',$('#kk').value.trim()); localStorage.setItem('square.model',$('#km').value.trim()||'claude-sonnet-5-5'); }catch{}
-    closeSheet(); if(getKey()) after?.(); };
-}
+
+let QUIET=false;
 const chains={};
 function save(id, data){
-  if(!S.col){ saveLocal(); return; }
+  if(!S.col){ if(!QUIET){ S.updatedAt=Date.now(); ghSchedule(); } saveLocal(); return; }
   chains[id]=(chains[id]||Promise.resolve()).then(()=> data ? S.col.doc(id).set(data) : S.col.doc(id).delete())
     .catch(e=>toast(e && e.code==='quota_exceeded' ? 'Storage is full' : "Couldn't save — try again"));
 }
@@ -262,8 +267,13 @@ function render(){
   $('#next').disabled = k>=t;
   const items=S.days[k]?.items||[], tot=sum(items), T=tdee();
   $('#kcal').textContent=fmt(tot.kcal);
-  $('#of').textContent = T.need ? 'calories' : `of ${fmt(T.est)} · ${tot.kcal<=T.est ? fmt(T.est-tot.kcal)+' left' : fmt(tot.kcal-T.est)+' over'}`;
-  $('#mp').textContent=fmt(tot.p)+'g'; $('#mc').textContent=fmt(tot.c)+'g'; $('#mf').textContent=fmt(tot.f)+'g';
+  // goals: calories = TDEE + surplus for the weekly gain goal; protein = g per lb of latest body weight
+  const gKg=+S.settings.goalKgWk||0, target=T.need?null:T.est+gKg*KCAL_PER_KG/7;
+  const lw=Object.keys(S.weights).filter(x=>x<=k).sort().at(-1), protT=lw? S.weights[lw].kg*LB*(+S.settings.protPerLb||0.9) : null;
+  $('#of').innerHTML = target==null ? 'calories'+(gKg?' · goal shows once TDEE is ready':'')
+    : tot.kcal<target ? `<b style="color:var(--ink);font-weight:500">${fmt(target-tot.kcal)} more</b> to hit ${fmt(target)}` : `${fmt(tot.kcal-target)} over ${fmt(target)}`;
+  $('#mp').innerHTML=fmt(tot.p)+(protT?`<small>/${fmt(protT)}g</small>`:'g'); $('#mc').textContent=fmt(tot.c)+'g'; $('#mf').textContent=fmt(tot.f)+'g';
+  $('#mp').style.color = protT && tot.p>=protT ? 'var(--or)' : '';
 
   // weight
   const wk=Object.keys(S.weights).filter(x=>x<=k).sort(); const last=wk.at(-1);
@@ -301,8 +311,8 @@ function renderTrends(T){
 const PADR=34;
 function xs(i,n,W){ return n<=1 ? (W-PADR)/2 : 4 + i/(n-1)*(W-PADR-8); }
 function drawW(el, raw, sm){
-  const W=el.clientWidth||320, H=120, n=raw.length, have=raw.filter(v=>v!=null);
-  if(!have.length){ el.innerHTML=`<svg><text x="${(W-PADR)/2}" y="64" text-anchor="middle">No weigh-ins in this range</text></svg>`; return; }
+  const W=el.clientWidth||320, H=200, n=raw.length, have=raw.filter(v=>v!=null);
+  if(!have.length){ el.innerHTML=`<svg><text x="${(W-PADR)/2}" y="104" text-anchor="middle">No weigh-ins in this range</text></svg>`; return; }
   let mn=Math.min(...have,...sm.filter(v=>v!=null)), mx=Math.max(...have,...sm.filter(v=>v!=null));
   if(mx-mn<2){ const m=(mx+mn)/2; mn=m-1; mx=m+1; }
   const y=v=>8+(1-(v-mn)/(mx-mn))*(H-20);
@@ -318,8 +328,8 @@ function drawW(el, raw, sm){
   el._y=y; el._n=n; el._W=W;
 }
 function drawC(el, vals, target){
-  const W=el.clientWidth||320, H=120, n=vals.length, have=vals.filter(v=>v!=null), t=today();
-  if(!have.length){ el.innerHTML=`<svg><text x="${(W-PADR)/2}" y="64" text-anchor="middle">No food logged in this range</text></svg>`; return; }
+  const W=el.clientWidth||320, H=200, n=vals.length, have=vals.filter(v=>v!=null), t=today();
+  if(!have.length){ el.innerHTML=`<svg><text x="${(W-PADR)/2}" y="104" text-anchor="middle">No food logged in this range</text></svg>`; return; }
   const mx=Math.max(...have, target||0)*1.1, y=v=>H-12-(v/mx)*(H-20);
   const bw=Math.max(1, Math.min(14, (W-PADR-8)/n*0.7)), keys=CH.c.keys;
   el.innerHTML=`<svg>
@@ -336,7 +346,7 @@ function scrub(id, chKey){
     // snap to nearest day that has data
     let best=-1; for(let d=0; d<n; d++){ for(const j of [i-d,i+d]) if(j>=0&&j<n&&c.vals[j]!=null){ best=j; break; } if(best>=0) break; }
     if(best<0) return;
-    const x=xs(best,n,W), g=el.querySelector('.guide'); if(g) g.innerHTML=`<line x1="${x}" x2="${x}" y1="0" y2="108" stroke="var(--ink)" opacity=".35"/>`;
+    const x=xs(best,n,W), g=el.querySelector('.guide'); if(g) g.innerHTML=`<line x1="${x}" x2="${x}" y1="0" y2="188" stroke="var(--ink)" opacity=".35"/>`;
     rd.innerHTML=`<i>${shortD(c.keys[best])}</i>${c.fmt(c.vals[best])}`; };
   const end=()=>{ const g=el.querySelector('.guide'); if(g) g.innerHTML=''; rd.innerHTML=CH[chKey]?.def()||''; };
   box.addEventListener('pointerdown',e=>{ at(e); box.setPointerCapture?.(e.pointerId); });
@@ -347,6 +357,43 @@ scrub('#cw','w'); scrub('#cc','c');
 $('#range').onclick=e=>{ const b=e.target.closest('button'); if(!b) return; RANGE=+b.dataset.r; try{localStorage.setItem('square.range',RANGE)}catch{} render(); };
 let rz; addEventListener('resize',()=>{ clearTimeout(rz); rz=setTimeout(render,150); });
 
+/* ---------- goals ---------- */
+function goalSheet(){
+  const u=unit(), T=tdee();
+  let g=+((+S.settings.goalKgWk||0)*(u==='lb'?LB:1)).toFixed(2), pr=+S.settings.protPerLb||0.9;
+  const step=u==='lb'?0.25:0.1;
+  openSheet(`<span class="lbl">${T.need?'TDEE still learning':'TDEE '+fmt(T.est)+' ± '+fmt(T.err)}</span><h2 class="serif">Goals</h2>
+    <p class="note" style="font-size:14px;margin-top:14px">Weight change per week</p>
+    <div style="display:flex;align-items:center;gap:10px;margin-top:6px">
+      <button class="btn" id="gm" style="flex:0 0 56px">−</button>
+      <div style="flex:1;text-align:center"><span class="serif" id="gv" style="font-size:48px"></span><span class="lbl" style="margin-left:4px">${u}/wk</span></div>
+      <button class="btn" id="gp" style="flex:0 0 56px">+</button>
+    </div>
+    <div class="note" id="gx" style="text-align:center"></div>
+    <p class="note" style="font-size:14px;margin-top:18px">Protein per lb of body weight</p>
+    <input class="num" id="pr" inputmode="decimal" value="${pr}" style="font-size:36px;margin-top:6px">
+    <div class="act"><button class="btn primary" id="ggo">Save</button></div>`);
+  const show=()=>{ $('#gv').textContent=(g>0?'+':'')+g.toFixed(2).replace(/\.?0+$/,'')||'0';
+    const kcal=g/(u==='lb'?LB:1)*KCAL_PER_KG/7; $('#gx').textContent = g ? `${kcal>0?'+':'−'}${fmt(Math.abs(kcal))} kcal/day ${kcal>0?'above':'below'} TDEE` : 'Maintain'; };
+  $('#gm').onclick=()=>{ g=Math.round((g-step)*100)/100; show(); };
+  $('#gp').onclick=()=>{ g=Math.round((g+step)*100)/100; show(); };
+  show();
+  $('#ggo').onclick=()=>{ const p=parseFloat($('#pr').value.replace(',','.')); if(!(p>0&&p<3)){ $('#pr').focus(); return; }
+    setSettings({goalKgWk:g/(u==='lb'?LB:1), protPerLb:p}); render(); closeSheet(); };
+}
+
+/* ---------- pages ---------- */
+function showView(v){
+  const tr=v==='trends';
+  $('#vToday').hidden=tr; $('#vTrends').hidden=!tr; document.body.classList.toggle('trends',tr);
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  scrollTo(0,0); render();
+}
+document.querySelector('.tabs').onclick=e=>{ const b=e.target.closest('button'); if(!b||!b.dataset.v) return;
+  const v=b.dataset.v; try{ history.replaceState(null,'',v==='trends'?'#trends':location.pathname+location.search); }catch{} showView(v); };
+addEventListener('hashchange',()=>showView(location.hash==='#trends'?'trends':'today'));
+if(location.hash==='#trends') showView('trends');
+
 /* ---------- ui helpers ---------- */
 let tt; function toast(m){ const e=$('#toast'); e.textContent=m; e.classList.add('on'); clearTimeout(tt); tt=setTimeout(()=>e.classList.remove('on'),2600); }
 function openSheet(html){ $('#sheet').innerHTML=html; $('#sheet').classList.add('on'); $('#bg').classList.add('on'); }
@@ -354,7 +401,7 @@ function closeSheet(){ $('#sheet').classList.remove('on'); $('#bg').classList.re
 $('#bg').onclick=closeSheet;
 $('#prev').onclick=()=>{ S.view=addD(S.view,-1); render(); };
 $('#next').onclick=()=>{ if(S.view<today()){ S.view=addD(S.view,1); render(); } };
-const errMsg = e => ({rate_limited:'Too many requests — try again in a bit', not_granted:'Allow Claude to read photos to use this', image_rejected:"That photo couldn't be read", refused:"Couldn't estimate that one", invalid_json:'Got a garbled answer — try again', no_key:'Add your API key first', bad_key:'API key was rejected — check it in Backup & settings'}[e?.code] || 'Something went wrong — try again');
+const errMsg = e => ({rate_limited:'Too many requests — try again in a bit', not_granted:'Allow Claude to read photos to use this', image_rejected:"That photo couldn't be read", refused:"Couldn't estimate that one", invalid_json:'Got a garbled answer — try again', no_key:'Add your API key first', bad_key:'API key was rejected — tap the dot at the top to fix it'}[e?.code] || 'Something went wrong — try again');
 
 async function prep(file){
   try{
@@ -447,6 +494,7 @@ function weightSheet(val, u, thumb){
   };
 }
 
+$('#tcard').onclick=()=>goalSheet();
 $('#wcard').onclick=()=>{ const w=S.weights[S.view]; weightSheet(w?showW(w.kg).toFixed(1):null); };
 $('#list').onclick=e=>{ const r=e.target.closest('.row'); if(r) entrySheet(r.dataset.id); };
 
@@ -484,36 +532,121 @@ function importData(d){
     if(!add.length) continue; const items=[...cur,...add]; S.days={...S.days,[k]:{date:k,items}}; save('d_'+k,{date:k,items}); nd++; }
   const s=d.settings||{}, calib=[...(S.settings.calib||[])], seen=new Set(calib.map(c=>c.before+c.note));
   for(const c of (Array.isArray(s.calib)?s.calib:[])) if(c && !seen.has(c.before+c.note)){ calib.push(c); seen.add(c.before+c.note); }
-  setSettings({unit:S.settings.unit||s.unit||null, calib:calib.slice(-40)});
+  setSettings({unit:S.settings.unit||s.unit||null, calib:calib.slice(-40), goalKgWk:S.settings.goalKgWk ?? s.goalKgWk ?? 0, protPerLb:S.settings.protPerLb ?? s.protPerLb ?? 0.9});
   render(); return {nd,nw};
 }
-$('#dataBtn').onclick=()=>{
-  const nDays=Object.keys(S.days).length, nW=Object.keys(S.weights).length;
-  openSheet(`<span class="lbl">${nDays} food days · ${nW} weigh-ins</span><h2 class="serif">Your data</h2>
-    <p class="note" style="font-size:14px">Save everything to a file. Any future version of this app can load it back in.</p>
-    <div class="act"><button class="btn primary" id="dx">Save backup file</button></div>
-    <div class="act"><label class="btn">Restore from file<input type="file" accept=".json,application/json,text/plain" id="di"></label></div>
-    <button class="link" id="dcopy">Copy as text instead</button>
-    ${S.standalone?'<button class="link" id="dkey">API key & model</button>':''}`);
-  if(S.standalone) $('#dkey').onclick=()=>keySheet();
-  const json=()=>JSON.stringify(exportData());
-  $('#dx').onclick=async()=>{
-    const dl=window.claude ? await claude.use('downloads').catch(()=>null) : null;
-    if(!dl){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([json()],{type:'application/json'})); a.download=`square-backup-${today()}.json`; document.body.append(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),4000); toast('Backup saved'); return; }
-    try{ await dl.save({filename:`square-backup-${today()}.json`, data:json()}); toast('Backup saved'); }
-    catch{ toast('Backup not saved'); }
+/* ---------- GitHub sync (standalone only) ---------- */
+// Data: <file>.json (all numbers, notes, corrections). Photos: <file>-photos/YYYY-MM.json (meal thumbnails by entry id).
+const lsg=k=>{ try{ return localStorage.getItem(k)||''; }catch{ return ''; } };
+const DEFAULT_REPO='gvcgcbrcht-png/FOOD-data';
+const gh={ get token(){ return lsg('square.gh.token'); }, get repo(){ return (lsg('square.gh.repo')||DEFAULT_REPO).trim().replace(/^https?:\/\/github\.com\//,'').replace(/\/+$/,''); }, get path(){ return lsg('square.gh.path')||'square-data.json'; } };
+const ghOn=()=>!!(S.standalone && gh.token && /^[\w.-]+\/[\w.-]+$/.test(gh.repo));
+const photoPath=m=>gh.path.replace(/\.json$/,'')+'-photos/'+m+'.json';
+let ghSha=null, ghT=null, ghBusy=false, ghAgain=false; const phSha={}, phHash={};
+S.gh={state:'off', at:0, err:''};
+const ghUrl=p=>`https://api.github.com/repos/${gh.repo}/contents/${p.split('/').map(encodeURIComponent).join('/')}`;
+const ghH=x=>({Authorization:'Bearer '+gh.token,'X-GitHub-Api-Version':'2022-11-28',Accept:'application/vnd.github+json',...x});
+function enc(str){ const b=new TextEncoder().encode(str); let s='', i=0; for(;i<b.length;i+=0x8000) s+=String.fromCharCode(...b.subarray(i,i+0x8000)); return btoa(s); }
+function dec(b){ const s=atob(b.replace(/\s/g,'')), u=new Uint8Array(s.length); for(let i=0;i<s.length;i++) u[i]=s.charCodeAt(i); return new TextDecoder().decode(u); }
+const hash=str=>{ let h=5381; for(let i=0;i<str.length;i++) h=(h*33)^str.charCodeAt(i); return (h>>>0).toString(36)+str.length; };
+const ghErr=c=>({401:'GitHub token is invalid or expired',403:'Token needs Contents: Read and write on that repo',404:'Repo not found — create it, and give the token access'}[c]||"Couldn't reach GitHub — will retry");
+function ghLabel(){ const g=S.gh; return g.state==='ok'?'Backed up to GitHub · '+new Date(g.at).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}) : g.state==='pending'?'Backing up…' : g.state==='err'?g.err:'Not backed up'; }
+function dot(){ const d=$('#sync'); if(!d) return; d.hidden=!S.standalone; d.dataset.s=ghOn()?S.gh.state:'off'; }
+function ghStatus(state,code){ const was=S.gh.state; S.gh={state,at:state==='ok'?Date.now():S.gh.at,err:code!=null?ghErr(code):''}; if(state==='err'&&was!=='err') toast(S.gh.err); dot(); }
+async function ghGet(p){
+  const r=await fetch(ghUrl(p),{headers:ghH(),cache:'no-store'});
+  if(r.status===404) return null;
+  if(!r.ok) throw r.status;
+  const j=await r.json();
+  let text=(j.encoding==='base64'&&j.content)?dec(j.content):null;
+  if(text==null){ const r2=await fetch(ghUrl(p),{headers:ghH({Accept:'application/vnd.github.raw+json'}),cache:'no-store'}); if(!r2.ok) throw r2.status; text=await r2.text(); }
+  return {sha:j.sha, data:JSON.parse(text), text};
+}
+async function ghPut(p,str,sha,msg){
+  const body={message:msg, content:enc(str)}; if(sha) body.sha=sha;
+  const r=await fetch(ghUrl(p),{method:'PUT',headers:ghH({'Content-Type':'application/json'}),body:JSON.stringify(body)});
+  if(!r.ok) throw r.status;
+  return (await r.json()).content?.sha||null;
+}
+function syncData(){ const d=exportData(); d.updatedAt=S.updatedAt||0; for(const day of Object.values(d.days)) for(const i of day.items||[]) delete i.thumb; return d; }
+function photosByMonth(){ const m={}; for(const [k,d] of Object.entries(S.days)) for(const i of d.items||[]) if(i.thumb){ (m[k.slice(0,7)] ||= {})[i.id]=i.thumb; } return m; }
+async function ghPullPhotos(){
+  const need=new Set(); for(const [k,d] of Object.entries(S.days)) for(const i of d.items||[]) if(!i.thumb) need.add(k.slice(0,7));
+  let got=false;
+  for(const m of need){ try{ const f=await ghGet(photoPath(m)); if(!f) continue; phSha[m]=f.sha; phHash[m]=hash(f.text);
+    for(const [k,d] of Object.entries(S.days)) if(k.startsWith(m)) for(const i of d.items||[]) if(!i.thumb && f.data[i.id]){ i.thumb=f.data[i.id]; got=true; } }catch{} }
+  if(got){ saveLocal(); render(); }
+}
+function applyRemote(d){
+  const thumbs={}; for(const day of Object.values(S.days)) for(const i of day.items||[]) if(i.thumb) thumbs[i.id]=i.thumb;
+  const days={}; for(const [k,v] of Object.entries(d.days||{})) if(Array.isArray(v?.items)) days[k]={date:k,items:v.items.map(i=>({...i,thumb:thumbs[i.id]||i.thumb||null}))};
+  S.days=days; S.weights=d.weights||{}; S.settings={unit:null,calib:[],...(d.settings||{})}; S.updatedAt=d.updatedAt||0;
+  saveLocal(); render();
+}
+function quietMerge(d){ QUIET=true; try{ importData(d); }catch{} QUIET=false; S.updatedAt=Math.max(Date.now(),S.updatedAt||0); saveLocal(); }
+function ghSchedule(){ if(!ghOn()) return; S.gh.state='pending'; dot(); clearTimeout(ghT); ghT=setTimeout(ghPush,2500); }
+async function ghPush(){
+  if(!ghOn()) return; if(ghBusy){ ghAgain=true; return; } ghBusy=true; clearTimeout(ghT); S.gh.state='pending'; dot();
+  const stamp=new Date().toISOString();
+  try{
+    for(let a=0;;a++){
+      try{ ghSha=await ghPut(gh.path, JSON.stringify(syncData(),null,1), ghSha, 'Square data '+stamp); break; }
+      catch(e){ if((e===409||e===422)&&a<2){ const f=await ghGet(gh.path); ghSha=f?.sha||null; if(f) quietMerge(f.data); continue; } throw e; }
+    }
+    for(const [m,map] of Object.entries(photosByMonth())){
+      const str=JSON.stringify(map), h=hash(str); if(phHash[m]===h) continue;
+      for(let a=0;;a++){
+        try{ phSha[m]=await ghPut(photoPath(m), str, phSha[m], 'Square photos '+m); phHash[m]=h; break; }
+        catch(e){ if((e===409||e===422)&&a<2){ const f=await ghGet(photoPath(m)); phSha[m]=f?.sha||null; if(f) Object.assign(map,{...f.data,...map}); continue; } throw e; }
+      }
+    }
+    ghStatus('ok');
+  }catch(e){ ghStatus('err',typeof e==='number'?e:0); clearTimeout(ghT); ghT=setTimeout(ghPush,60000); }
+  ghBusy=false; if(ghAgain){ ghAgain=false; ghPush(); }
+}
+let ghSyncing=false;
+async function ghSync(){
+  if(!ghOn()){ dot(); return; } if(ghSyncing||ghBusy) return; ghSyncing=true; S.gh.state='pending'; dot();
+  try{
+    const f=await ghGet(gh.path); ghSha=f?.sha||null;
+    const ru=f?.data?.updatedAt||0, lu=S.updatedAt||0;
+    if(!f) { ghSyncing=false; await ghPush(); return; }
+    if(ru>lu) applyRemote(f.data); else if(ru<lu) quietMerge(f.data);
+    ghSyncing=false;
+    await ghPullPhotos();
+    await ghPush();   // also uploads any photos not on GitHub yet
+    return;
+  }catch(e){ ghStatus('err',typeof e==='number'?e:0); }
+  ghSyncing=false;
+}
+function setupSheet(after){
+  const inp=(id,ph,val,type='text',small)=>`<input id="${id}" type="${type}" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${ph}" value="${esc(val)}" style="width:100%;font:${small?'13px Inter':'inherit'};color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-top:8px">`;
+  openSheet(`<span class="lbl" style="${S.gh.state==='err'?'color:var(--or)':''}">${esc(ghOn()?ghLabel():'Setup')}</span><h2 class="serif">Setup</h2>
+    <p class="note" style="font-size:14px;margin-top:10px"><b>Anthropic API key</b> — reads your photos. From console.anthropic.com.</p>
+    ${inp('kk','sk-ant-…',getKey(),'password')}
+    ${inp('km','claude-sonnet-5-5',lsg('square.model'),'text',1)}
+    <p class="note" style="font-size:14px;margin-top:18px"><b>GitHub backup</b> — everything you enter, photos included, is saved to this <b>private</b> repo. Token: fine-grained, Contents: Read and write, that repo only.</p>
+    ${inp('gr',DEFAULT_REPO,lsg('square.gh.repo')||DEFAULT_REPO)}
+    ${inp('gt','github_pat_…',gh.token,'password')}
+    <div class="act"><button class="btn primary" id="sgo">Save</button></div>`);
+  $('#sgo').onclick=async()=>{
+    try{ localStorage.setItem('square.key',$('#kk').value.trim()); localStorage.setItem('square.model',$('#km').value.trim());
+      localStorage.setItem('square.gh.repo',$('#gr').value.trim()); localStorage.setItem('square.gh.token',$('#gt').value.trim()); }catch{}
+    if(!getKey()){ toast('Add your Anthropic API key'); return; }
+    if(!ghOn()){ toast('Add your GitHub repo and token'); return; }
+    $('#sgo').innerHTML='<span class="spin"></span>Connecting'; $('#sgo').disabled=true; ghSha=null; S.gh.err='';
+    await ghSync();
+    if(S.gh.state==='ok'){ closeSheet(); toast('Backing up to GitHub'); after?.(); }
+    else { $('#sgo').textContent='Try again'; $('#sgo').disabled=false; toast(S.gh.err||ghErr(0)); }
   };
-  $('#dcopy').onclick=async()=>{ try{ await navigator.clipboard.writeText(json()); toast('Copied — paste it somewhere safe'); }catch{ toast("Couldn't copy"); } };
-  $('#di').onchange=async e=>{ const f=e.target.files[0]; e.target.value=''; if(!f) return;
-    try{ const r=importData(JSON.parse(await f.text())); closeSheet(); toast(`Restored ${r.nd} days, ${r.nw} weigh-ins`); }
-    catch{ toast("That file isn't a Square backup"); } };
-};
+}
+$('#sync').onclick=()=>setupSheet();
 
 /* ---------- boot ---------- */
 render();
 (async()=>{
   const C=window.claude;
-  if(!C){ S.standalone=true; await loadLocal(); return; }
+  if(!C){ S.standalone=true; await loadLocal(); ghSync(); document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') ghSync(); }); return; }
   const [db,user,sample]=await Promise.all(['db','user','sample'].map(n=>C.use(n).catch(()=>null)));
   S.sample=sample;
   if(sample){ const lim=await sample.limits().catch(()=>null); S.canImg=!!lim?.images; if(lim?.images?.maxCount) S.maxImgs=lim.images.maxCount; }
@@ -522,7 +655,7 @@ render();
   if(db && uid){ S.col=db.collection('data/users/'+uid); subscribe(); } else loadLocal();
 })();
 // Without a key, tapping Scale/Food opens setup instead of the camera.
-['#bScale','#bFood'].forEach(id=>$(id).addEventListener('click',e=>{ if(S.standalone && !getKey()){ e.preventDefault(); keySheet(()=>$(id+' input').click()); } }));
+['#bScale','#bFood'].forEach(id=>$(id).addEventListener('click',e=>{ if(S.standalone && (!getKey() || !ghOn())){ e.preventDefault(); setupSheet(()=>$(id+' input').click()); } }));
 function aiOff(){ $('#bFood').classList.add('off'); $('#bScale').classList.add('off'); }
 </script>
 </body>
